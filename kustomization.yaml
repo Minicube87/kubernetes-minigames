@@ -8,8 +8,14 @@ configMapGenerator:
   - name: flappy-bird-content
     files:
       - games/flappy-bird/index.html
+  - name: memory-content
+    files:
+      - games/memory/index.html
   - name: pong-content
     files:
       - games/pong/index.html
+  - name: snake-content
+    files:
+      - games/snake/index.html
 generatorOptions:
   disableNameSuffixHash: true
