@@ -72,6 +72,7 @@
       .game-area {
         display: grid;
         gap: 12px;
+        transform-origin: top center;
       }
       .zoom-row {
         display: flex;
@@ -85,16 +86,7 @@
       }
       .board-wrap {
         width: 100%;
-        overflow: auto;
         border-radius: 12px;
-      }
-      .board-wrap::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
-      }
-      .board-wrap::-webkit-scrollbar-thumb {
-        background: #1f2937;
-        border-radius: 999px;
       }
       canvas {
         width: 100%;
@@ -104,7 +96,6 @@
         background: #0b1220;
         border: 2px solid #1f2937;
         touch-action: none;
-        transform-origin: top left;
       }
       .controls {
         display: grid;
@@ -234,6 +225,7 @@
       const pauseBtn = document.getElementById("pauseBtn");
       const zoomInput = document.getElementById("zoom");
       const zoomVal = document.getElementById("zoomVal");
+      const gamePanel = document.querySelector(".game-area");
 
       const gridSize = 18;
       const cell = canvas.width / gridSize;
@@ -449,7 +441,11 @@
 
       function setZoom(value) {
         const scale = Number(value);
-        canvas.style.transform = `scale(${scale})`;
+        gamePanel.style.height = "auto";
+        gamePanel.style.transform = "scale(1)";
+        const baseHeight = gamePanel.getBoundingClientRect().height;
+        gamePanel.style.transform = `scale(${scale})`;
+        gamePanel.style.height = `${Math.max(1, baseHeight * scale)}px`;
         zoomVal.textContent = `${Math.round(scale * 100)}%`;
       }
 
