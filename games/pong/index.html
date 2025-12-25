@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pong - MiniGames</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #0b132b;
+        --panel: #1c2541;
+        --accent: #5bc0be;
+        --text: #f1f1f1;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: radial-gradient(circle at top, #3a506b, var(--bg));
+        font-family: "Courier New", monospace;
+        color: var(--text);
+      }
+      .wrap {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        box-sizing: border-box;
+      }
+      .panel {
+        background: var(--panel);
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        max-width: 520px;
+        width: 100%;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.3rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      canvas {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 12px;
+        background: #0b132b;
+      }
+      .hud {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        <h1>Pong</h1>
+        <canvas id="game" width="360" height="480"></canvas>
+        <div class="hud">
+          <div>Drag to move</div>
+          <div id="score">0 : 0</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const scoreEl = document.getElementById("score");
+
+      const state = {
+        paddle: { x: 20, y: 200, w: 12, h: 80 },
+        ai: { x: canvas.width - 32, y: 200, w: 12, h: 80 },
+        ball: { x: 180, y: 240, vx: 3, vy: 3, r: 6 },
+        score: { player: 0, ai: 0 },
+      };
+
+      function resetBall() {
+        state.ball.x = canvas.width / 2;
+        state.ball.y = canvas.height / 2;
+        state.ball.vx = (Math.random() > 0.5 ? 1 : -1) * 3.2;
+        state.ball.vy = (Math.random() * 2 - 1) * 3.2;
+      }
+
+      function update() {
+        const ball = state.ball;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        if (ball.y - ball.r < 0 || ball.y + ball.r > canvas.height) {
+          ball.vy *= -1;
+        }
+
+        const player = state.paddle;
+        if (ball.x - ball.r < player.x + player.w && ball.y > player.y && ball.y < player.y + player.h) {
+          ball.vx *= -1.05;
+          ball.x = player.x + player.w + ball.r;
+        }
+
+        const ai = state.ai;
+        if (ball.x + ball.r > ai.x && ball.y > ai.y && ball.y < ai.y + ai.h) {
+          ball.vx *= -1.05;
+          ball.x = ai.x - ball.r;
+        }
+
+        ai.y += (ball.y - (ai.y + ai.h / 2)) * 0.06;
+
+        if (ball.x < 0) {
+          state.score.ai += 1;
+          resetBall();
+        }
+        if (ball.x > canvas.width) {
+          state.score.player += 1;
+          resetBall();
+        }
+
+        scoreEl.textContent = `${state.score.player} : ${state.score.ai}`;
+        draw();
+        requestAnimationFrame(update);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "#5bc0be";
+        ctx.setLineDash([6, 10]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "#f1f1f1";
+        ctx.fillRect(state.paddle.x, state.paddle.y, state.paddle.w, state.paddle.h);
+        ctx.fillRect(state.ai.x, state.ai.y, state.ai.w, state.ai.h);
+
+        ctx.beginPath();
+        ctx.arc(state.ball.x, state.ball.y, state.ball.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      canvas.addEventListener("pointermove", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+        state.paddle.y = Math.max(0, Math.min(canvas.height - state.paddle.h, y - state.paddle.h / 2));
+      });
+
+      resetBall();
+      requestAnimationFrame(update);
+    </script>
+  </body>
+</html>

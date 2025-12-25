@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flappy-bird
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flappy-bird
+  template:
+    metadata:
+      labels:
+        app: flappy-bird
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: site-content
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+      volumes:
+        - name: site-content
+          configMap:
+            name: flappy-bird-content
