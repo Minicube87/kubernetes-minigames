@@ -83,16 +83,41 @@
       .controls {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(3, minmax(0, 1fr));
         gap: 10px;
+        justify-items: center;
+        align-items: center;
       }
       .controls button {
         border: none;
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 14px 10px;
-        background: #1f2937;
+        background: #111827;
         color: var(--text);
         font-weight: 700;
         letter-spacing: 0.04em;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      }
+      .dpad-btn {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        font-size: 1.4rem;
+        display: grid;
+        place-items: center;
+        border: 1px solid #1f2937;
+      }
+      .dpad-btn:active {
+        transform: translateY(1px) scale(0.98);
+      }
+      .control-center {
+        display: grid;
+        gap: 8px;
+        width: 100%;
+      }
+      .control-center button {
+        width: 100%;
+        padding: 14px 10px;
       }
       .controls button.primary {
         background: var(--accent);
@@ -131,12 +156,18 @@
         </div>
         <canvas id="game" width="360" height="360"></canvas>
         <div class="controls">
-          <button id="upBtn" class="secondary">Up</button>
-          <button id="startBtn" class="primary">Start</button>
-          <button id="downBtn" class="secondary">Down</button>
-          <button id="leftBtn" class="secondary">Left</button>
-          <button id="pauseBtn">Pause</button>
-          <button id="rightBtn" class="secondary">Right</button>
+          <div></div>
+          <button id="upBtn" class="dpad-btn secondary" aria-label="Up">▲</button>
+          <div></div>
+          <button id="leftBtn" class="dpad-btn secondary" aria-label="Left">◀</button>
+          <div class="control-center">
+            <button id="startBtn" class="primary">Start</button>
+            <button id="pauseBtn">Pause</button>
+          </div>
+          <button id="rightBtn" class="dpad-btn secondary" aria-label="Right">▶</button>
+          <div></div>
+          <button id="downBtn" class="dpad-btn secondary" aria-label="Down">▼</button>
+          <div></div>
         </div>
       </section>
 
