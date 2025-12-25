@@ -73,6 +73,29 @@
         display: grid;
         gap: 12px;
       }
+      .zoom-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .zoom-row input {
+        flex: 1;
+      }
+      .board-wrap {
+        width: 100%;
+        overflow: auto;
+        border-radius: 12px;
+      }
+      .board-wrap::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+      }
+      .board-wrap::-webkit-scrollbar-thumb {
+        background: #1f2937;
+        border-radius: 999px;
+      }
       canvas {
         width: 100%;
         height: auto;
@@ -81,6 +104,7 @@
         background: #0b1220;
         border: 2px solid #1f2937;
         touch-action: none;
+        transform-origin: top left;
       }
       .controls {
         display: grid;
@@ -173,7 +197,14 @@
           <div class="stat" id="best">Best: 0</div>
           <div class="stat" id="speed">Speed: 6</div>
         </div>
-        <canvas id="game" width="360" height="360"></canvas>
+        <div class="zoom-row">
+          <span>Zoom</span>
+          <input id="zoom" type="range" min="0.8" max="1.5" step="0.05" value="1" />
+          <span id="zoomVal">100%</span>
+        </div>
+        <div class="board-wrap">
+          <canvas id="game" width="360" height="360"></canvas>
+        </div>
         <div class="controls">
           <div></div>
           <button id="upBtn" class="dpad-btn secondary" aria-label="Up">▲</button>
@@ -201,6 +232,8 @@
       const speedEl = document.getElementById("speed");
       const startBtn = document.getElementById("startBtn");
       const pauseBtn = document.getElementById("pauseBtn");
+      const zoomInput = document.getElementById("zoom");
+      const zoomVal = document.getElementById("zoomVal");
 
       const gridSize = 18;
       const cell = canvas.width / gridSize;
@@ -413,6 +446,18 @@
 
       updateStats();
       draw();
+
+      function setZoom(value) {
+        const scale = Number(value);
+        canvas.style.transform = `scale(${scale})`;
+        zoomVal.textContent = `${Math.round(scale * 100)}%`;
+      }
+
+      zoomInput.addEventListener("input", (event) => {
+        setZoom(event.target.value);
+      });
+
+      setZoom(1);
     </script>
   </body>
 </html>
