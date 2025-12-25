@@ -19,6 +19,8 @@
         background: radial-gradient(circle at top, #3a506b, var(--bg));
         font-family: "Courier New", monospace;
         color: var(--text);
+        overscroll-behavior: none;
+        touch-action: none;
       }
       .wrap {
         min-height: 100%;
@@ -144,15 +146,31 @@
         ctx.fill();
       }
 
-      canvas.addEventListener("pointermove", (event) => {
+      let pointerActive = false;
+
+      function setPaddleFromEvent(event) {
         const rect = canvas.getBoundingClientRect();
         const y = (event.clientY - rect.top) * (canvas.height / rect.height);
         state.paddle.y = Math.max(0, Math.min(canvas.height - state.paddle.h, y - state.paddle.h / 2));
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        pointerActive = true;
+        canvas.setPointerCapture(event.pointerId);
+        setPaddleFromEvent(event);
       });
 
-      canvas.addEventListener("touchmove", (event) => {
-        event.preventDefault();
-      }, { passive: false });
+      canvas.addEventListener("pointermove", (event) => {
+        if (!pointerActive) {
+          return;
+        }
+        setPaddleFromEvent(event);
+      });
+
+      canvas.addEventListener("pointerup", (event) => {
+        pointerActive = false;
+        canvas.releasePointerCapture(event.pointerId);
+      });
 
       resetBall();
       requestAnimationFrame(update);
