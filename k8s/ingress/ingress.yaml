@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: minigames.fritz.box
+    - host: raspberrypi.fritz.box
       http:
         paths:
           - path: /flappy
