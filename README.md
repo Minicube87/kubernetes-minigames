@@ -48,6 +48,7 @@ FritzBox does not let you define arbitrary local DNS records by default. Use the
    - `http://raspberrypi.fritz.box/flappy`
    - `http://raspberrypi.fritz.box/memory`
    - `http://raspberrypi.fritz.box/pong`
+   - `http://raspberrypi.fritz.box/snake`
 
 Optional DNS check:
 
