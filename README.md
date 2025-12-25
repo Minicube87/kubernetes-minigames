@@ -1,70 +1,69 @@
-# MiniGames auf Kubernetes (Raspberry Pi)
+# MiniGames on Kubernetes (Raspberry Pi)
 
-Dieses Repo stellt kleine statische Spiele als Kubernetes-Services bereit. Mit Ingress kannst du sie über feste URLs wie `flappy.lan` und `pong.lan` erreichen.
+This repo serves small static games (Flappy Bird + Pong) via Kubernetes. It uses Ingress so you can open clean URLs from your phone in the same Wi‑Fi.
 
-## Voraussetzungen
+## Prerequisites
 
-- Raspberry Pi mit laufendem Kubernetes (k3s)
-- `kubectl` auf deinem Laptop oder direkt auf dem Pi
-- Der Pi und dein Handy sind im selben Netzwerk (oder Portweiterleitung/VPN)
+- Raspberry Pi running Kubernetes (k3s)
+- `kubectl` on your laptop or directly on the Pi
+- Phone and Pi are in the same network (or you use a tunnel)
 
-## Starten (Ingress mit k3s / Traefik)
+## Deploy (k3s + Traefik Ingress)
 
-Alles ausrollen:
+Apply everything:
 
 ```bash
 kubectl apply -k .
 ```
 
-Pods/Services prüfen:
+Check pods/services:
 
 ```bash
 kubectl get pods -n minigames
 kubectl get svc -n minigames
 ```
 
-Ingress prüfen:
+Check ingress:
 
 ```bash
 kubectl get ingress -n minigames
 kubectl describe ingress -n minigames minigames
 ```
 
-Ingress lokal testen (ohne DNS):
+Ingress test without DNS (Host header):
 
 ```bash
-curl -H "Host: flappy.lan" http://<raspi-ip>
-curl -H "Host: pong.lan" http://<raspi-ip>
+curl -H "Host: raspberrypi.fritz.box" http://<raspi-ip>/flappy
+curl -H "Host: raspberrypi.fritz.box" http://<raspi-ip>/pong
 ```
 
-DNS in der FritzBox setzen:
+## FritzBox Hostname (No Custom DNS)
 
-- `flappy.lan` → IP deines Raspberry Pi
-- `pong.lan` → IP deines Raspberry Pi
+FritzBox does not let you define arbitrary local DNS records by default. Use the device hostname instead.
 
-Dann im Handy-Browser:
+1) Set the Raspberry Pi name in the FritzBox UI:
+   - Heimnetz -> Netzwerk -> Raspberry Pi -> Edit -> Name (e.g. `raspberrypi`)
+2) The device is then reachable at `raspberrypi.fritz.box`.
+3) Open on your phone:
+   - `http://raspberrypi.fritz.box/flappy`
+   - `http://raspberrypi.fritz.box/pong`
 
-- `http://flappy.lan`
-- `http://pong.lan`
-
-DNS testen vom Laptop (optional):
+Optional DNS check:
 
 ```bash
-nslookup flappy.lan
-nslookup pong.lan
+nslookup raspberrypi.fritz.box
 ```
 
-## Neues Spiel hinzufügen
+## Add a New Game
 
-1. Neues Verzeichnis anlegen, z.B. `games/neues-spiel/index.html`.
-2. `k8s/neues-spiel/` kopieren und anpassen:
-   - `name` auf das neue Spiel
-   - `configMapGenerator` im Root-`kustomization.yaml` auf den neuen HTML-Pfad
-3. `k8s/kustomization.yaml` um den neuen Ordner erweitern.
-4. `kustomization.yaml` im Root um den neuen `configMapGenerator` ergänzen.
-5. Optional: `k8s/ingress/ingress.yaml` um einen neuen Host erweitern.
-6. Anwenden: `kubectl apply -k .`
+1) Create a new game folder, e.g. `games/new-game/index.html`.
+2) Copy `k8s/flappy-bird/` to `k8s/new-game/` and update:
+   - `name` to the new game name
+   - add a new entry in the root `kustomization.yaml` `configMapGenerator`
+3) Add the new folder to `k8s/kustomization.yaml`.
+4) Optionally extend `k8s/ingress/ingress.yaml` with a new path.
+5) Apply:
 
-## Hinweise
-
-- Wenn du von außerhalb deines WLANs zugreifen willst, brauchst du Portweiterleitung oder einen Tunnel (z.B. Tailscale).
+```bash
+kubectl apply -k .
+```
