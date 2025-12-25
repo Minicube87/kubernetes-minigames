@@ -32,3 +32,10 @@ spec:
                 name: pong
                 port:
                   number: 80
+          - path: /snake
+            pathType: Prefix
+            backend:
+              service:
+                name: snake
+                port:
+                  number: 80
