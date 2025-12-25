@@ -46,6 +46,7 @@ FritzBox does not let you define arbitrary local DNS records by default. Use the
 2) The device is then reachable at `raspberrypi.fritz.box`.
 3) Open on your phone:
    - `http://raspberrypi.fritz.box/flappy`
+   - `http://raspberrypi.fritz.box/memory`
    - `http://raspberrypi.fritz.box/pong`
 
 Optional DNS check:
