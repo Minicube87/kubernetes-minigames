@@ -47,6 +47,7 @@
         display: block;
         border-radius: 12px;
         background: #0b132b;
+        touch-action: none;
       }
       .hud {
         display: flex;
@@ -148,6 +149,10 @@
         const y = (event.clientY - rect.top) * (canvas.height / rect.height);
         state.paddle.y = Math.max(0, Math.min(canvas.height - state.paddle.h, y - state.paddle.h / 2));
       });
+
+      canvas.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+      }, { passive: false });
 
       resetBall();
       requestAnimationFrame(update);
