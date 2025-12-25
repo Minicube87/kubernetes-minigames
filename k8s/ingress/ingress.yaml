@@ -18,6 +18,13 @@ spec:
                 name: flappy-bird
                 port:
                   number: 80
+          - path: /memory
+            pathType: Prefix
+            backend:
+              service:
+                name: memory
+                port:
+                  number: 80
           - path: /pong
             pathType: Prefix
             backend:
