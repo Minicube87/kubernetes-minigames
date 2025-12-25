@@ -25,9 +25,11 @@
         font-family: "Trebuchet MS", "Segoe UI", sans-serif;
         color: var(--text);
         overscroll-behavior: contain;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       .wrap {
-        min-height: 100vh;
+        min-height: 100%;
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -142,7 +144,7 @@
       }
       @media (max-width: 430px) {
         canvas {
-          max-height: 52vh;
+          max-height: 46vh;
         }
         .dpad-btn {
           width: 56px;
