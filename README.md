@@ -16,6 +16,27 @@ Alles ausrollen:
 kubectl apply -k .
 ```
 
+Pods/Services prüfen:
+
+```bash
+kubectl get pods -n minigames
+kubectl get svc -n minigames
+```
+
+Ingress prüfen:
+
+```bash
+kubectl get ingress -n minigames
+kubectl describe ingress -n minigames minigames
+```
+
+Ingress lokal testen (ohne DNS):
+
+```bash
+curl -H "Host: flappy.lan" http://<raspi-ip>
+curl -H "Host: pong.lan" http://<raspi-ip>
+```
+
 DNS in der FritzBox setzen:
 
 - `flappy.lan` → IP deines Raspberry Pi
@@ -25,6 +46,13 @@ Dann im Handy-Browser:
 
 - `http://flappy.lan`
 - `http://pong.lan`
+
+DNS testen vom Laptop (optional):
+
+```bash
+nslookup flappy.lan
+nslookup pong.lan
+```
 
 ## Neues Spiel hinzufügen
 
@@ -36,3 +64,7 @@ Dann im Handy-Browser:
 4. `kustomization.yaml` im Root um den neuen `configMapGenerator` ergänzen.
 5. Optional: `k8s/ingress/ingress.yaml` um einen neuen Host erweitern.
 6. Anwenden: `kubectl apply -k .`
+
+## Hinweise
+
+- Wenn du von außerhalb deines WLANs zugreifen willst, brauchst du Portweiterleitung oder einen Tunnel (z.B. Tailscale).
