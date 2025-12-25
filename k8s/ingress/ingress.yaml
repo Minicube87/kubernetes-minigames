@@ -4,7 +4,7 @@ metadata:
   name: minigames
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.middlewares: minigames-strip@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: minigames-minigames-strip@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
