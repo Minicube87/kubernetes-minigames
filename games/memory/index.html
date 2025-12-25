@@ -54,7 +54,7 @@
       .grid {
         display: grid;
         gap: 12px;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: 1fr;
       }
       .panel {
         background: var(--panel);
@@ -64,7 +64,7 @@
       }
       .controls {
         display: grid;
-        gap: 8px;
+        gap: 10px;
       }
       .field {
         display: grid;
@@ -94,9 +94,9 @@
         color: var(--text);
       }
       .stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         font-size: 0.9rem;
       }
       .stat {
@@ -109,10 +109,11 @@
         display: grid;
         gap: 10px;
         grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 12px;
       }
       .card {
         position: relative;
-        padding-top: 120%;
+        padding-top: 110%;
         perspective: 1000px;
       }
       .card-inner {
@@ -152,13 +153,13 @@
       }
       .meme-title {
         font-family: Impact, "Arial Black", sans-serif;
-        font-size: 0.85rem;
+        font-size: 0.78rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
       .meme-sub {
         margin-top: 6px;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         color: #334155;
       }
       .matched .face.front {
@@ -176,10 +177,25 @@
           margin: 0 auto;
         }
         .grid {
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 320px 1fr;
         }
         .board {
           grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 480px) {
+        .panel {
+          padding: 12px;
+        }
+        .stats {
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+        }
+        button {
+          padding: 12px 14px;
+        }
+        .card {
+          padding-top: 115%;
         }
       }
     </style>
