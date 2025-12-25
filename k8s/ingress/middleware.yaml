@@ -8,3 +8,4 @@ spec:
       - "^/flappy"
       - "^/memory"
       - "^/pong"
+      - "^/snake"
