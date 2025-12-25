@@ -14,5 +14,8 @@ configMapGenerator:
   - name: pong-content
     files:
       - games/pong/index.html
+  - name: snake-content
+    files:
+      - games/snake/index.html
 generatorOptions:
   disableNameSuffixHash: true
