@@ -1,6 +1,6 @@
 # MiniGames on Kubernetes (Raspberry Pi)
 
-This repo serves small static games (Flappy Bird + Pong) via Kubernetes. It uses Ingress so you can open clean URLs from your phone in the same Wi‑Fi.
+This repo serves small static games via Kubernetes. It uses Ingress so you can open clean URLs from your phone in the same Wi‑Fi.
 
 ## Prerequisites
 
