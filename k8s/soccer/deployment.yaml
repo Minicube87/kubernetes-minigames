@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soccer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: soccer
+  template:
+    metadata:
+      labels:
+        app: soccer
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: site-content
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+      volumes:
+        - name: site-content
+          configMap:
+            name: soccer-content
