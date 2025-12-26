@@ -372,6 +372,7 @@
           id: `${item.title}-${idx}`,
           title: item.title,
           sub: item.sub,
+          image: item.image || "",
         }));
         return seededShuffle(doubled, seedStr + "-deck");
       }
