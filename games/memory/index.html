@@ -361,6 +361,10 @@
       }
 
       function handleFlip(index, cardEl) {
+        if (!state.roomCode || !state.playerName) {
+          alert("Please enter room code and player name first.");
+          return;
+        }
         if (state.revealed.length === 2) {
           return;
         }
@@ -487,8 +491,12 @@
           alert("Please enter a room code.");
           return;
         }
+        if (!player) {
+          alert("Please enter your name.");
+          return;
+        }
         state.roomCode = room;
-        state.playerName = player || "Player";
+        state.playerName = player;
         state.pairs = pairs;
         const seedStr = `${room}-${pairs}-v1`;
         state.deck = buildDeck(pairs, seedStr);
@@ -517,7 +525,6 @@
 
       roomCodeInput.value = generateCode();
       updateStats();
-      startGame();
     </script>
   </body>
 </html>
