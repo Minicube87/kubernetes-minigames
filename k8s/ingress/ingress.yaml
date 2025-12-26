@@ -39,6 +39,20 @@ spec:
                 name: snake
                 port:
                   number: 80
+          - path: /soccer-ws
+            pathType: Prefix
+            backend:
+              service:
+                name: soccer-rt
+                port:
+                  number: 80
+          - path: /soccer
+            pathType: Prefix
+            backend:
+              service:
+                name: soccer
+                port:
+                  number: 80
           - path: /api
             pathType: Prefix
             backend:
