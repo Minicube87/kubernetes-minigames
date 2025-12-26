@@ -60,6 +60,41 @@
         margin-top: 12px;
         font-size: 0.9rem;
       }
+      .player-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        font-size: 0.85rem;
+      }
+      .player-row input {
+        flex: 1;
+        border-radius: 10px;
+        border: 1px solid #d4d9e2;
+        padding: 8px 10px;
+        font: inherit;
+      }
+      .leaderboard {
+        margin-top: 12px;
+        background: #f8f6ef;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .leaderboard h2 {
+        margin: 0 0 6px;
+        font-size: 0.95rem;
+        letter-spacing: 0.03em;
+      }
+      .leaderboard ol {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 0.85rem;
+      }
+      .leaderboard li {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
       .hint {
         font-size: 0.85rem;
         opacity: 0.7;
@@ -76,6 +111,14 @@
           <div class="hint">Space / Tap to flap</div>
           <div id="score">Score: 0</div>
         </div>
+        <div class="player-row">
+          <span>Player</span>
+          <input id="playerName" placeholder="Your name" maxlength="16" />
+        </div>
+        <div class="leaderboard">
+          <h2>Top 5</h2>
+          <ol id="leaderboard"></ol>
+        </div>
       </div>
     </div>
 
@@ -83,6 +126,8 @@
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
       const scoreEl = document.getElementById("score");
+      const playerNameInput = document.getElementById("playerName");
+      const leaderboardEl = document.getElementById("leaderboard");
 
       const state = {
         bird: { x: 90, y: 320, vy: 0, radius: 14 },
@@ -92,6 +137,7 @@
         best: 0,
         running: false,
         gameOver: false,
+        playerName: "Player",
       };
 
       const config = {
@@ -194,6 +240,7 @@
       function endGame() {
         state.running = false;
         state.gameOver = true;
+        submitScore();
       }
 
       function flap() {
@@ -268,6 +315,69 @@
         drawOverlay();
       }
 
+      function renderLeaderboard(scores) {
+        leaderboardEl.innerHTML = "";
+        if (!scores || scores.length === 0) {
+          const item = document.createElement("li");
+          item.textContent = "No scores yet.";
+          leaderboardEl.appendChild(item);
+          return;
+        }
+        scores.forEach((entry) => {
+          const item = document.createElement("li");
+          const name = document.createElement("span");
+          const value = document.createElement("span");
+          name.textContent = entry.name;
+          value.textContent = entry.score;
+          item.appendChild(name);
+          item.appendChild(value);
+          leaderboardEl.appendChild(item);
+        });
+      }
+
+      async function loadBest() {
+        try {
+          const response = await fetch("/api/scores");
+          if (!response.ok) {
+            return;
+          }
+          const data = await response.json();
+          if (typeof data.best === "number") {
+            state.best = data.best;
+          }
+          if (Array.isArray(data.scores)) {
+            renderLeaderboard(data.scores);
+          }
+        } catch (err) {
+          // Ignore offline or missing backend.
+        }
+      }
+
+      async function submitScore() {
+        if (state.score <= state.best) {
+          return;
+        }
+        try {
+          const response = await fetch("/api/scores", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ score: state.score, name: state.playerName }),
+          });
+          if (!response.ok) {
+            return;
+          }
+          const data = await response.json();
+          if (typeof data.best === "number") {
+            state.best = data.best;
+          }
+          if (Array.isArray(data.scores)) {
+            renderLeaderboard(data.scores);
+          }
+        } catch (err) {
+          // Ignore offline or missing backend.
+        }
+      }
+
       canvas.addEventListener("pointerdown", flap);
       window.addEventListener("keydown", (event) => {
         if (event.code === "Space") {
@@ -276,7 +386,19 @@
         }
       });
 
+      const savedName = localStorage.getItem("flappyPlayerName");
+      if (savedName) {
+        state.playerName = savedName;
+        playerNameInput.value = savedName;
+      }
+      playerNameInput.addEventListener("input", (event) => {
+        const value = event.target.value.trim().slice(0, 16);
+        state.playerName = value || "Player";
+        localStorage.setItem("flappyPlayerName", state.playerName);
+      });
+
       draw();
+      loadBest();
       requestAnimationFrame(update);
     </script>
   </body>
