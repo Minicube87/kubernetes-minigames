@@ -11,6 +11,16 @@ configMapGenerator:
   - name: memory-content
     files:
       - games/memory/index.html
+      - assets/ck_astroworld.png=games/memory/assets/ck_astroworld.png
+      - assets/ck_avangers.png=games/memory/assets/ck_avangers.png
+      - assets/ck_diddy.png=games/memory/assets/ck_diddy.png
+      - assets/ck_dream.png=games/memory/assets/ck_dream.png
+      - assets/ck_georgeFloyd.png=games/memory/assets/ck_georgeFloyd.png
+      - assets/ck_ishowspeed.png=games/memory/assets/ck_ishowspeed.png
+      - assets/ck_shag.png=games/memory/assets/ck_shag.png
+      - assets/ck_teacher.png=games/memory/assets/ck_teacher.png
+      - assets/ck_weAreCharlieKirk.png=games/memory/assets/ck_weAreCharlieKirk.png
+      - assets/ck_woman.png=games/memory/assets/ck_woman.png
   - name: pong-content
     files:
       - games/pong/index.html
