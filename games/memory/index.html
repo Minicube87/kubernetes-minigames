@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Memory - Meme Match</title>
+    <base href="/memory/" />
     <style>
       :root {
         color-scheme: light;
@@ -165,6 +166,12 @@
         font-size: 0.65rem;
         color: #334155;
       }
+      .meme-image {
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        object-fit: cover;
+      }
       .matched .face.front {
         border-color: var(--accent-2);
         box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
@@ -227,6 +234,14 @@
               <option value="10">10 pairs (4x5)</option>
             </select>
           </label>
+          <label class="field">
+            Theme
+            <select id="theme">
+              <option value="classic">Classic Meme Mix</option>
+              <option value="kirk">Charlie Kirk Face (images)</option>
+              <option value="insta">Insta GIF Cringe</option>
+            </select>
+          </label>
           <button id="startBtn">Start / Reset</button>
           <button id="newCodeBtn" class="secondary">Generate new code</button>
           <button id="copyCodeBtn" class="secondary">Copy share text</button>
@@ -247,24 +262,57 @@
     </div>
 
     <script>
-      const memes = [
-        { title: "DOGE", sub: "wow such memory" },
-        { title: "THIS IS FINE", sub: "everything is fine" },
-        { title: "RICKROLL", sub: "never gonna give" },
-        { title: "DISTRACTED BF", sub: "classic move" },
-        { title: "BLINKING GUY", sub: "wait what" },
-        { title: "PEPE", sub: "feels good" },
-        { title: "SALT BAE", sub: "seasoned" },
-        { title: "SUCCESS KID", sub: "we got this" },
-        { title: "FUTURAMA FRY", sub: "not sure if" },
-        { title: "GALAXY BRAIN", sub: "big brain" },
-        { title: "GRUMPY CAT", sub: "nope" },
-        { title: "KAREN", sub: "I want manager" },
-      ];
+      if (location.pathname.endsWith("/memory")) {
+        location.replace(`${location.pathname}/`);
+      }
+
+      const themes = {
+        classic: [
+          { title: "DOGE", sub: "wow such memory" },
+          { title: "THIS IS FINE", sub: "everything is fine" },
+          { title: "RICKROLL", sub: "never gonna give" },
+          { title: "DISTRACTED BF", sub: "classic move" },
+          { title: "BLINKING GUY", sub: "wait what" },
+          { title: "PEPE", sub: "feels good" },
+          { title: "SALT BAE", sub: "seasoned" },
+          { title: "SUCCESS KID", sub: "we got this" },
+          { title: "FUTURAMA FRY", sub: "not sure if" },
+          { title: "GALAXY BRAIN", sub: "big brain" },
+          { title: "GRUMPY CAT", sub: "nope" },
+          { title: "KAREN", sub: "I want manager" },
+        ],
+        kirk: [
+          { title: "ASTROWORLD", sub: "big mood", image: "assets/ck_astroworld.png" },
+          { title: "AVANGERS", sub: "assemble", image: "assets/ck_avangers.png" },
+          { title: "DIDDY", sub: "plot twist", image: "assets/ck_diddy.png" },
+          { title: "DREAM", sub: "nightmare", image: "assets/ck_dream.png" },
+          { title: "GEORGE", sub: "headline", image: "assets/ck_georgeFloyd.png" },
+          { title: "ISHOWSPEED", sub: "zoomies", image: "assets/ck_ishowspeed.png" },
+          { title: "SHAG", sub: "mystery", image: "assets/ck_shag.png" },
+          { title: "TEACHER", sub: "homework", image: "assets/ck_teacher.png" },
+          { title: "CHARLIE", sub: "we are", image: "assets/ck_weAreCharlieKirk.png" },
+          { title: "WOMAN", sub: "plotline", image: "assets/ck_woman.png" },
+        ],
+        insta: [
+          { title: "CAPTION: OMG", sub: "gif energy" },
+          { title: "REACTION LOOP", sub: "send it" },
+          { title: "SAD SPARKLE", sub: "mood" },
+          { title: "HYPE DANCE", sub: "we vibing" },
+          { title: "EYE ROLL", sub: "cringe detected" },
+          { title: "ZOOM IN", sub: "dramatic" },
+          { title: "KISSY FACE", sub: "story time" },
+          { title: "PET FILTER", sub: "meow" },
+          { title: "GLITCH CUT", sub: "loop it" },
+          { title: "LOW QUALITY", sub: "intentional" },
+          { title: "SLO MO", sub: "cinematic" },
+          { title: "TEXT OVERLAY", sub: "POV: you" },
+        ],
+      };
 
       const roomCodeInput = document.getElementById("roomCode");
       const playerNameInput = document.getElementById("playerName");
       const boardSizeInput = document.getElementById("boardSize");
+      const themeInput = document.getElementById("theme");
       const boardEl = document.getElementById("board");
       const startBtn = document.getElementById("startBtn");
       const newCodeBtn = document.getElementById("newCodeBtn");
@@ -286,6 +334,7 @@
         roomCode: "",
         playerName: "",
         pairs: 8,
+        theme: "classic",
       };
 
       function hashString(str) {
@@ -321,12 +370,14 @@
         return arr;
       }
 
-      function buildDeck(pairs, seedStr) {
-        const picks = seededShuffle(memes, seedStr).slice(0, pairs);
+      function buildDeck(pairs, seedStr, themeKey) {
+        const theme = themes[themeKey] || themes.classic;
+        const picks = seededShuffle(theme, seedStr).slice(0, pairs);
         const doubled = picks.concat(picks).map((item, idx) => ({
           id: `${item.title}-${idx}`,
           title: item.title,
           sub: item.sub,
+          image: item.image || "",
         }));
         return seededShuffle(doubled, seedStr + "-deck");
       }
@@ -341,8 +392,10 @@
             <div class="card-inner">
               <div class="face back">MEME</div>
               <div class="face front">
-                <div class="meme-title">${card.title}</div>
-                <div class="meme-sub">${card.sub}</div>
+                ${card.image ? `<img class="meme-image" src="${card.image}" alt="${card.title}" />` : `
+                  <div class="meme-title">${card.title}</div>
+                  <div class="meme-sub">${card.sub}</div>
+                `}
               </div>
             </div>
           `;
@@ -487,6 +540,7 @@
         const room = roomCodeInput.value.trim().toUpperCase();
         const player = playerNameInput.value.trim();
         const pairs = Number(boardSizeInput.value);
+        const themeKey = themeInput.value;
         if (!room) {
           alert("Please enter a room code.");
           return;
@@ -498,8 +552,9 @@
         state.roomCode = room;
         state.playerName = player;
         state.pairs = pairs;
-        const seedStr = `${room}-${pairs}-v1`;
-        state.deck = buildDeck(pairs, seedStr);
+        state.theme = themeKey;
+        const seedStr = `${room}-${pairs}-${themeKey}-v1`;
+        state.deck = buildDeck(pairs, seedStr, themeKey);
         resetGame();
       }
 

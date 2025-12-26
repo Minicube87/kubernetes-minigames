@@ -21,7 +21,14 @@ spec:
             - name: site-content
               mountPath: /usr/share/nginx/html
               readOnly: true
+            - name: meme-assets
+              mountPath: /usr/share/nginx/html/assets
+              readOnly: true
       volumes:
         - name: site-content
           configMap:
             name: memory-content
+        - name: meme-assets
+          hostPath:
+            path: /home/kale/Workspaces/kubernetes-minigames/games/memory/assets
+            type: Directory
