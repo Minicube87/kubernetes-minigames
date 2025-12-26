@@ -9,3 +9,5 @@ spec:
       - "^/memory"
       - "^/pong"
       - "^/snake"
+      - "^/soccer"
+      - "^/soccer-ws"
