@@ -28,6 +28,8 @@
         color: var(--text);
         touch-action: none;
         overscroll-behavior: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       .wrap {
         min-height: 100vh;
@@ -35,6 +37,7 @@
         flex-direction: column;
         gap: 16px;
         padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
       }
       header {
         background: var(--panel);
