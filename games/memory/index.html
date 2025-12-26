@@ -165,6 +165,12 @@
         font-size: 0.65rem;
         color: #334155;
       }
+      .meme-image {
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        object-fit: cover;
+      }
       .matched .face.front {
         border-color: var(--accent-2);
         box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
@@ -231,7 +237,7 @@
             Theme
             <select id="theme">
               <option value="classic">Classic Meme Mix</option>
-              <option value="kirk">Charlie Kirk Face</option>
+              <option value="kirk">Charlie Kirk Face (images)</option>
               <option value="insta">Insta GIF Cringe</option>
             </select>
           </label>
@@ -271,18 +277,16 @@
           { title: "KAREN", sub: "I want manager" },
         ],
         kirk: [
-          { title: "TINY FACE", sub: "debate mode" },
-          { title: "WIDE STARE", sub: "camera zoom" },
-          { title: "OPEN MOUTH", sub: "soundbite time" },
-          { title: "POINTING", sub: "gotcha moment" },
-          { title: "SMIRK", sub: "clip incoming" },
-          { title: "LOOK LEFT", sub: "ignore facts" },
-          { title: "LOOK RIGHT", sub: "pivot hard" },
-          { title: "HEAD TILT", sub: "confidently wrong" },
-          { title: "ECHO CHAMBER", sub: "applause sign" },
-          { title: "MIC DROP", sub: "not really" },
-          { title: "HOT TAKE", sub: "extra spicy" },
-          { title: "SHOCK FACE", sub: "viral moment" },
+          { title: "ASTROWORLD", sub: "big mood", image: "assets/ck_astroworld.png" },
+          { title: "AVANGERS", sub: "assemble", image: "assets/ck_avangers.png" },
+          { title: "DIDDY", sub: "plot twist", image: "assets/ck_diddy.png" },
+          { title: "DREAM", sub: "nightmare", image: "assets/ck_dream.png" },
+          { title: "GEORGE", sub: "headline", image: "assets/ck_georgeFloyd.png" },
+          { title: "ISHOWSPEED", sub: "zoomies", image: "assets/ck_ishowspeed.png" },
+          { title: "SHAG", sub: "mystery", image: "assets/ck_shag.png" },
+          { title: "TEACHER", sub: "homework", image: "assets/ck_teacher.png" },
+          { title: "CHARLIE", sub: "we are", image: "assets/ck_weAreCharlieKirk.png" },
+          { title: "WOMAN", sub: "plotline", image: "assets/ck_woman.png" },
         ],
         insta: [
           { title: "CAPTION: OMG", sub: "gif energy" },
@@ -382,8 +386,10 @@
             <div class="card-inner">
               <div class="face back">MEME</div>
               <div class="face front">
-                <div class="meme-title">${card.title}</div>
-                <div class="meme-sub">${card.sub}</div>
+                ${card.image ? `<img class="meme-image" src="${card.image}" alt="${card.title}" />` : `
+                  <div class="meme-title">${card.title}</div>
+                  <div class="meme-sub">${card.sub}</div>
+                `}
               </div>
             </div>
           `;
