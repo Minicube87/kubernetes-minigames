@@ -17,5 +17,8 @@ configMapGenerator:
   - name: snake-content
     files:
       - games/snake/index.html
+  - name: flappy-score-api-code
+    files:
+      - backend/score-api/server.js
 generatorOptions:
   disableNameSuffixHash: true

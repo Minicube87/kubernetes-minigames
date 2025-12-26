@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flappy-score-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flappy-score-api
+  template:
+    metadata:
+      labels:
+        app: flappy-score-api
+    spec:
+      containers:
+        - name: api
+          image: node:18-alpine
+          command: ["node", "/app/server.js"]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: SCORE_SET_KEY
+              value: "flappy:scores"
+          volumeMounts:
+            - name: api-code
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: api-code
+          configMap:
+            name: flappy-score-api-code
