@@ -26,7 +26,7 @@
         background: radial-gradient(circle at top, #1f2937, var(--bg));
         font-family: "Trebuchet MS", "Segoe UI", sans-serif;
         color: var(--text);
-        touch-action: auto;
+        touch-action: pan-y;
         overscroll-behavior: contain;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -346,8 +346,7 @@
               </div>
             </div>
           `;
-          cardEl.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
+          cardEl.addEventListener("click", () => {
             handleFlip(index, cardEl);
           });
           boardEl.appendChild(cardEl);
