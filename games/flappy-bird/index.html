@@ -354,9 +354,6 @@
       }
 
       async function submitScore() {
-        if (state.score <= state.best) {
-          return;
-        }
         try {
           const response = await fetch("/api/scores", {
             method: "POST",
