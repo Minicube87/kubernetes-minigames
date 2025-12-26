@@ -227,6 +227,14 @@
               <option value="10">10 pairs (4x5)</option>
             </select>
           </label>
+          <label class="field">
+            Theme
+            <select id="theme">
+              <option value="classic">Classic Meme Mix</option>
+              <option value="kirk">Charlie Kirk Face</option>
+              <option value="insta">Insta GIF Cringe</option>
+            </select>
+          </label>
           <button id="startBtn">Start / Reset</button>
           <button id="newCodeBtn" class="secondary">Generate new code</button>
           <button id="copyCodeBtn" class="secondary">Copy share text</button>
@@ -247,24 +255,55 @@
     </div>
 
     <script>
-      const memes = [
-        { title: "DOGE", sub: "wow such memory" },
-        { title: "THIS IS FINE", sub: "everything is fine" },
-        { title: "RICKROLL", sub: "never gonna give" },
-        { title: "DISTRACTED BF", sub: "classic move" },
-        { title: "BLINKING GUY", sub: "wait what" },
-        { title: "PEPE", sub: "feels good" },
-        { title: "SALT BAE", sub: "seasoned" },
-        { title: "SUCCESS KID", sub: "we got this" },
-        { title: "FUTURAMA FRY", sub: "not sure if" },
-        { title: "GALAXY BRAIN", sub: "big brain" },
-        { title: "GRUMPY CAT", sub: "nope" },
-        { title: "KAREN", sub: "I want manager" },
-      ];
+      const themes = {
+        classic: [
+          { title: "DOGE", sub: "wow such memory" },
+          { title: "THIS IS FINE", sub: "everything is fine" },
+          { title: "RICKROLL", sub: "never gonna give" },
+          { title: "DISTRACTED BF", sub: "classic move" },
+          { title: "BLINKING GUY", sub: "wait what" },
+          { title: "PEPE", sub: "feels good" },
+          { title: "SALT BAE", sub: "seasoned" },
+          { title: "SUCCESS KID", sub: "we got this" },
+          { title: "FUTURAMA FRY", sub: "not sure if" },
+          { title: "GALAXY BRAIN", sub: "big brain" },
+          { title: "GRUMPY CAT", sub: "nope" },
+          { title: "KAREN", sub: "I want manager" },
+        ],
+        kirk: [
+          { title: "TINY FACE", sub: "debate mode" },
+          { title: "WIDE STARE", sub: "camera zoom" },
+          { title: "OPEN MOUTH", sub: "soundbite time" },
+          { title: "POINTING", sub: "gotcha moment" },
+          { title: "SMIRK", sub: "clip incoming" },
+          { title: "LOOK LEFT", sub: "ignore facts" },
+          { title: "LOOK RIGHT", sub: "pivot hard" },
+          { title: "HEAD TILT", sub: "confidently wrong" },
+          { title: "ECHO CHAMBER", sub: "applause sign" },
+          { title: "MIC DROP", sub: "not really" },
+          { title: "HOT TAKE", sub: "extra spicy" },
+          { title: "SHOCK FACE", sub: "viral moment" },
+        ],
+        insta: [
+          { title: "CAPTION: OMG", sub: "gif energy" },
+          { title: "REACTION LOOP", sub: "send it" },
+          { title: "SAD SPARKLE", sub: "mood" },
+          { title: "HYPE DANCE", sub: "we vibing" },
+          { title: "EYE ROLL", sub: "cringe detected" },
+          { title: "ZOOM IN", sub: "dramatic" },
+          { title: "KISSY FACE", sub: "story time" },
+          { title: "PET FILTER", sub: "meow" },
+          { title: "GLITCH CUT", sub: "loop it" },
+          { title: "LOW QUALITY", sub: "intentional" },
+          { title: "SLO MO", sub: "cinematic" },
+          { title: "TEXT OVERLAY", sub: "POV: you" },
+        ],
+      };
 
       const roomCodeInput = document.getElementById("roomCode");
       const playerNameInput = document.getElementById("playerName");
       const boardSizeInput = document.getElementById("boardSize");
+      const themeInput = document.getElementById("theme");
       const boardEl = document.getElementById("board");
       const startBtn = document.getElementById("startBtn");
       const newCodeBtn = document.getElementById("newCodeBtn");
@@ -286,6 +325,7 @@
         roomCode: "",
         playerName: "",
         pairs: 8,
+        theme: "classic",
       };
 
       function hashString(str) {
@@ -321,8 +361,9 @@
         return arr;
       }
 
-      function buildDeck(pairs, seedStr) {
-        const picks = seededShuffle(memes, seedStr).slice(0, pairs);
+      function buildDeck(pairs, seedStr, themeKey) {
+        const theme = themes[themeKey] || themes.classic;
+        const picks = seededShuffle(theme, seedStr).slice(0, pairs);
         const doubled = picks.concat(picks).map((item, idx) => ({
           id: `${item.title}-${idx}`,
           title: item.title,
@@ -487,6 +528,7 @@
         const room = roomCodeInput.value.trim().toUpperCase();
         const player = playerNameInput.value.trim();
         const pairs = Number(boardSizeInput.value);
+        const themeKey = themeInput.value;
         if (!room) {
           alert("Please enter a room code.");
           return;
@@ -498,8 +540,9 @@
         state.roomCode = room;
         state.playerName = player;
         state.pairs = pairs;
-        const seedStr = `${room}-${pairs}-v1`;
-        state.deck = buildDeck(pairs, seedStr);
+        state.theme = themeKey;
+        const seedStr = `${room}-${pairs}-${themeKey}-v1`;
+        state.deck = buildDeck(pairs, seedStr, themeKey);
         resetGame();
       }
 
