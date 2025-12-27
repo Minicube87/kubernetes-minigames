@@ -141,6 +141,9 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
       }
+      .touch-row.alt {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
       .touch-btn {
         padding: 12px 0;
         border-radius: 12px;
@@ -205,11 +208,13 @@
             <strong>Player 1 (Host)</strong>
             <div>Move: A / D</div>
             <div>Jump: W</div>
+            <div>Shoot: S</div>
           </div>
           <div class="controls">
             <strong>Player 2 (Guest)</strong>
             <div>Move: Left / Right</div>
             <div>Jump: Up</div>
+            <div>Shoot: Down</div>
           </div>
         </div>
 
@@ -219,6 +224,10 @@
             <div class="touch-btn" data-action="left">Left</div>
             <div class="touch-btn primary" data-action="jump">Jump</div>
             <div class="touch-btn" data-action="right">Right</div>
+          </div>
+          <div class="touch-row alt">
+            <div class="touch-btn" data-action="shoot">Shoot</div>
+            <div class="touch-btn" data-action="shoot">Lob</div>
           </div>
         </div>
       </section>
@@ -292,8 +301,8 @@
         }, 1200);
       });
 
-      const input = { left: false, right: false, jump: false };
-      const remoteInput = { left: false, right: false, jump: false };
+      const input = { left: false, right: false, jump: false, shoot: false };
+      const remoteInput = { left: false, right: false, jump: false, shoot: false };
 
       const state = {
         p1: { x: 160, y: 300, vx: 0, vy: 0, r: 26, color: "#ffd166" },
@@ -339,6 +348,20 @@
           player.vy = -config.jumpSpeed;
         }
         commands.jump = false;
+      }
+
+      function attemptLob(player) {
+        const ball = state.ball;
+        const dx = ball.x - player.x;
+        const dy = ball.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        const reach = player.r + ball.r + 12;
+        if (dist > reach) {
+          return;
+        }
+        const dir = dx === 0 ? 0 : dx / Math.abs(dx);
+        ball.vx += dir * 280 + player.vx * 0.4;
+        ball.vy -= 260;
       }
 
       function stepPlayer(player, dt) {
@@ -567,9 +590,11 @@
         KeyA: "left",
         KeyD: "right",
         KeyW: "jump",
+        KeyS: "shoot",
         ArrowLeft: "left",
         ArrowRight: "right",
         ArrowUp: "jump",
+        ArrowDown: "shoot",
       };
 
       function handleKey(event, isDown) {
@@ -578,10 +603,10 @@
           return;
         }
         event.preventDefault();
-        if (action === "jump" && isDown) {
-          input.jump = true;
-        } else if (action === "jump" && !isDown) {
-          input.jump = false;
+        if ((action === "jump" || action === "shoot") && isDown) {
+          input[action] = true;
+        } else if ((action === "jump" || action === "shoot") && !isDown) {
+          input[action] = false;
         } else {
           input[action] = isDown;
         }
@@ -596,10 +621,8 @@
           return;
         }
         const press = (isDown) => {
-          if (action === "jump") {
-            if (isDown) {
-              input.jump = true;
-            }
+          if (action === "jump" || action === "shoot") {
+            input[action] = isDown;
             return;
           }
           input[action] = isDown;
@@ -627,6 +650,7 @@
         }
         socket.send(JSON.stringify({ type: "input", input }));
         input.jump = false;
+        input.shoot = false;
       }
 
       function sendState() {
@@ -656,6 +680,14 @@
           stepBall(dt);
           collide(state.p1);
           collide(state.p2);
+          if (input.shoot) {
+            attemptLob(state.p1);
+            input.shoot = false;
+          }
+          if (remoteInput.shoot) {
+            attemptLob(state.p2);
+            remoteInput.shoot = false;
+          }
         }
 
         render();
