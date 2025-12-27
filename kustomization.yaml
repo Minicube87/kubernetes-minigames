@@ -17,8 +17,14 @@ configMapGenerator:
   - name: snake-content
     files:
       - games/snake/index.html
+  - name: soccer-content
+    files:
+      - games/soccer/index.html
   - name: flappy-score-api-code
     files:
       - backend/score-api/server.js
+  - name: soccer-rt-code
+    files:
+      - backend/soccer-rt/server.js
 generatorOptions:
   disableNameSuffixHash: true

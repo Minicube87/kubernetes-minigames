@@ -5,6 +5,8 @@ resources:
   - memory
   - pong
   - snake
+  - soccer
+  - soccer-rt
   - redis
   - flappy-score-api
   - ingress

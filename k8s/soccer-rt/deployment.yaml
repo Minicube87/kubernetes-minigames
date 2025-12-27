@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soccer-rt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: soccer-rt
+  template:
+    metadata:
+      labels:
+        app: soccer-rt
+    spec:
+      containers:
+        - name: rt
+          image: node:18-alpine
+          command: ["node", "/app/server.js"]
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: rt-code
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: rt-code
+          configMap:
+            name: soccer-rt-code

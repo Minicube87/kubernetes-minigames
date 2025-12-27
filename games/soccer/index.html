@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Head Soccer - MiniGames</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #071015;
+        --panel: #0f1b23;
+        --field: #1d6f3b;
+        --field-dark: #15552d;
+        --accent: #ffcf33;
+        --text: #f7f3eb;
+        --danger: #ff6b6b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        font-family: "Trebuchet MS", "Verdana", sans-serif;
+        background: radial-gradient(circle at top, #18384c, var(--bg));
+        color: var(--text);
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+      .shell {
+        width: min(940px, 100%);
+        display: grid;
+        gap: 16px;
+        animation: drop 0.6s ease-out;
+      }
+      @keyframes drop {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      h1 {
+        margin: 0;
+        font-family: "Impact", "Haettenschweiler", "Arial Black", sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: clamp(1.4rem, 2vw + 1rem, 2.2rem);
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        font-size: 0.9rem;
+        color: #c7d4df;
+      }
+      .panel {
+        background: var(--panel);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+        display: grid;
+        gap: 12px;
+      }
+      .field-wrap {
+        position: relative;
+      }
+      canvas {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #2e8c4d, var(--field));
+        border: 2px solid #0a1c12;
+      }
+      .hud {
+        display: grid;
+        gap: 6px;
+        font-size: 0.95rem;
+      }
+      .status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .pill.accent {
+        color: var(--accent);
+        border: 1px solid rgba(255, 207, 51, 0.4);
+      }
+      .pill.alert {
+        color: var(--danger);
+        border: 1px solid rgba(255, 107, 107, 0.5);
+      }
+      .link-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .link-row input {
+        flex: 1 1 260px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: none;
+        background: #0b1620;
+        color: var(--text);
+      }
+      .link-row button {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 10px;
+        background: var(--accent);
+        color: #17120a;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .controls {
+        display: grid;
+        gap: 6px;
+        color: #c7d4df;
+        font-size: 0.85rem;
+      }
+      .touch-controls {
+        display: grid;
+        gap: 12px;
+        margin-top: 6px;
+      }
+      .touch-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .touch-row.alt {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .touch-btn {
+        padding: 12px 0;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(15, 27, 35, 0.8);
+        color: var(--text);
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-align: center;
+        user-select: none;
+        touch-action: none;
+      }
+      .touch-btn.primary {
+        background: var(--accent);
+        color: #17120a;
+      }
+      .hint {
+        font-size: 0.8rem;
+        color: #a6b7c6;
+      }
+      .split {
+        display: grid;
+        gap: 8px;
+      }
+      @media (min-width: 720px) {
+        .split {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <h1>Head Soccer</h1>
+        <div class="meta">
+          <span>2D side view - 1v1 local network</span>
+          <span>Room share via URL</span>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="field-wrap">
+          <canvas id="field" width="720" height="420"></canvas>
+        </div>
+
+        <div class="hud">
+          <div class="status">
+            <span class="pill accent" id="role">Connecting...</span>
+            <span class="pill" id="room">Room: -</span>
+            <span class="pill" id="peer">Waiting for opponent</span>
+            <span class="pill" id="score">0 : 0</span>
+          </div>
+          <div class="link-row">
+            <input id="share" readonly />
+            <button id="copy">Copy link</button>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="controls">
+            <strong>Player 1 (Host)</strong>
+            <div>Move: A / D</div>
+            <div>Jump: W</div>
+            <div>Shoot: S</div>
+          </div>
+          <div class="controls">
+            <strong>Player 2 (Guest)</strong>
+            <div>Move: Left / Right</div>
+            <div>Jump: Up</div>
+            <div>Shoot: Down</div>
+          </div>
+        </div>
+
+        <div class="touch-controls">
+          <div class="hint">Mobile controls (touch & hold for move)</div>
+          <div class="touch-row">
+            <div class="touch-btn" data-action="left">Left</div>
+            <div class="touch-btn primary" data-action="jump">Jump</div>
+            <div class="touch-btn" data-action="right">Right</div>
+          </div>
+          <div class="touch-row alt">
+            <div class="touch-btn" data-action="shoot">Shoot</div>
+            <div class="touch-btn" data-action="shoot">Lob</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("field");
+      const ctx = canvas.getContext("2d");
+      const roleEl = document.getElementById("role");
+      const roomEl = document.getElementById("room");
+      const peerEl = document.getElementById("peer");
+      const scoreEl = document.getElementById("score");
+      const shareInput = document.getElementById("share");
+      const copyBtn = document.getElementById("copy");
+
+      const config = {
+        gravity: 1400,
+        playerSpeed: 520,
+        playerMax: 260,
+        jumpSpeed: 520,
+        ballGravity: 900,
+        ballBounce: 0.72,
+        headBounce: 0.9,
+        sendRate: 50,
+      };
+
+      function createRoomId() {
+        return Math.random().toString(36).slice(2, 8);
+      }
+
+      const url = new URL(window.location.href);
+      let roomId = url.searchParams.get("room");
+      if (!roomId) {
+        roomId = createRoomId();
+        url.searchParams.set("room", roomId);
+        history.replaceState(null, "", url.toString());
+      }
+
+      const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+      const wsUrl = `${wsProtocol}://${window.location.host}/soccer-ws?room=${roomId}`;
+
+      shareInput.value = url.toString();
+
+      copyBtn.addEventListener("click", async () => {
+        let copied = false;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareInput.value);
+            copied = true;
+          }
+        } catch (err) {
+          copied = false;
+        }
+
+        if (!copied) {
+          shareInput.removeAttribute("readonly");
+          shareInput.select();
+          shareInput.setSelectionRange(0, shareInput.value.length);
+          try {
+            copied = document.execCommand("copy");
+          } catch (err) {
+            copied = false;
+          }
+          shareInput.setAttribute("readonly", "readonly");
+          window.getSelection()?.removeAllRanges();
+        }
+
+        copyBtn.textContent = copied ? "Copied" : "Copy failed";
+        setTimeout(() => {
+          copyBtn.textContent = "Copy link";
+        }, 1200);
+      });
+
+      const input = { left: false, right: false, jump: false, shoot: false };
+      const remoteInput = { left: false, right: false, jump: false, shoot: false };
+
+      const state = {
+        p1: { x: 160, y: 300, vx: 0, vy: 0, r: 26, color: "#ffd166" },
+        p2: { x: 560, y: 300, vx: 0, vy: 0, r: 26, color: "#7ad7f0" },
+        ball: { x: 360, y: 140, vx: 140, vy: 0, r: 12 },
+        score: { left: 0, right: 0 },
+      };
+
+      const field = {
+        w: canvas.width,
+        h: canvas.height,
+        ground: 360,
+        goalWidth: 42,
+        goalHeight: 120,
+      };
+
+      function resetRound(direction = 1) {
+        state.p1.x = 160;
+        state.p1.y = field.ground - state.p1.r;
+        state.p1.vx = 0;
+        state.p1.vy = 0;
+        state.p2.x = 560;
+        state.p2.y = field.ground - state.p2.r;
+        state.p2.vx = 0;
+        state.p2.vy = 0;
+        state.ball.x = field.w / 2;
+        state.ball.y = 140;
+        state.ball.vx = 170 * direction;
+        state.ball.vy = -120;
+      }
+
+      function applyInput(player, commands, dt) {
+        if (commands.left) {
+          player.vx -= config.playerSpeed * dt;
+        }
+        if (commands.right) {
+          player.vx += config.playerSpeed * dt;
+        }
+        player.vx = Math.max(-config.playerMax, Math.min(config.playerMax, player.vx));
+
+        const onGround = player.y + player.r >= field.ground - 1;
+        if (commands.jump && onGround) {
+          player.vy = -config.jumpSpeed;
+        }
+        commands.jump = false;
+      }
+
+      function attemptLob(player) {
+        const ball = state.ball;
+        const dx = ball.x - player.x;
+        const dy = ball.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        const reach = player.r + ball.r + 12;
+        if (dist > reach) {
+          return;
+        }
+        const dir = dx === 0 ? 0 : dx / Math.abs(dx);
+        ball.vx += dir * 280 + player.vx * 0.4;
+        ball.vy -= 260;
+      }
+
+      function stepPlayer(player, dt) {
+        player.vy += config.gravity * dt;
+        player.x += player.vx * dt;
+        player.y += player.vy * dt;
+
+        if (player.y + player.r > field.ground) {
+          player.y = field.ground - player.r;
+          player.vy = 0;
+          player.vx *= 0.86;
+        }
+
+        const minX = player.r + 8;
+        const maxX = field.w - player.r - 8;
+        if (player.x < minX) {
+          player.x = minX;
+          player.vx = 0;
+        }
+        if (player.x > maxX) {
+          player.x = maxX;
+          player.vx = 0;
+        }
+      }
+
+      function stepBall(dt) {
+        const ball = state.ball;
+        ball.vy += config.ballGravity * dt;
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+
+        const goalTop = field.ground - field.goalHeight;
+
+        if (ball.y + ball.r > field.ground) {
+          ball.y = field.ground - ball.r;
+          ball.vy *= -config.ballBounce;
+          ball.vx *= 0.96;
+        }
+
+        if (ball.y - ball.r < 0) {
+          ball.y = ball.r;
+          ball.vy *= -0.8;
+        }
+
+        if (ball.x - ball.r < 0) {
+          if (ball.y > goalTop) {
+            state.score.right += 1;
+            resetRound(1);
+            return;
+          }
+          ball.x = ball.r;
+          ball.vx *= -0.9;
+        }
+
+        if (ball.x + ball.r > field.w) {
+          if (ball.y > goalTop) {
+            state.score.left += 1;
+            resetRound(-1);
+            return;
+          }
+          ball.x = field.w - ball.r;
+          ball.vx *= -0.9;
+        }
+      }
+
+      function collide(player) {
+        const ball = state.ball;
+        const dx = ball.x - player.x;
+        const dy = ball.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        const minDist = ball.r + player.r;
+        if (dist === 0 || dist >= minDist) {
+          return;
+        }
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        ball.x = player.x + nx * minDist;
+        ball.y = player.y + ny * minDist;
+
+        const relVx = ball.vx - player.vx;
+        const relVy = ball.vy - player.vy;
+        const speed = relVx * nx + relVy * ny;
+        if (speed < 0) {
+          const impulse = (1 + config.headBounce) * speed;
+          ball.vx -= impulse * nx;
+          ball.vy -= impulse * ny;
+        }
+
+        ball.vx += player.vx * 0.22;
+        ball.vy += player.vy * 0.18;
+      }
+
+      function drawField() {
+        ctx.clearRect(0, 0, field.w, field.h);
+
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        for (let i = 0; i < 8; i += 1) {
+          ctx.fillRect(i * 90, field.ground, 45, field.h - field.ground);
+        }
+
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(field.w / 2, 0);
+        ctx.lineTo(field.w / 2, field.ground);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(field.w / 2, field.ground, 80, Math.PI, 2 * Math.PI);
+        ctx.stroke();
+
+        ctx.fillStyle = "#0d4a25";
+        ctx.fillRect(0, field.ground, field.w, field.h - field.ground);
+
+        drawGoal(0, "left");
+        drawGoal(field.w - field.goalWidth, "right");
+      }
+
+      function drawGoal(x, side) {
+        const goalTop = field.ground - field.goalHeight;
+        ctx.strokeStyle = "rgba(255,255,255,0.6)";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, goalTop, field.goalWidth, field.goalHeight);
+
+        ctx.fillStyle = side === "left" ? "rgba(255, 209, 102, 0.08)" : "rgba(122, 215, 240, 0.08)";
+        ctx.fillRect(x, goalTop, field.goalWidth, field.goalHeight);
+      }
+
+      function drawPlayer(player) {
+        ctx.fillStyle = player.color;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(player.x - 8, player.y + player.r - 6, 16, 26);
+
+        ctx.fillStyle = "#111";
+        ctx.beginPath();
+        ctx.arc(player.x + 8, player.y - 6, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawBall() {
+        ctx.fillStyle = "#f7f3eb";
+        ctx.beginPath();
+        ctx.arc(state.ball.x, state.ball.y, state.ball.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(state.ball.x, state.ball.y, state.ball.r - 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      function render() {
+        drawField();
+        drawPlayer(state.p1);
+        drawPlayer(state.p2);
+        drawBall();
+        scoreEl.textContent = `${state.score.left} : ${state.score.right}`;
+      }
+
+      let socket;
+      let role = "spectator";
+      let peerConnected = false;
+
+      function setStatus(text, type) {
+        roleEl.textContent = text;
+        roleEl.classList.toggle("alert", type === "alert");
+      }
+
+      function setPeerStatus(text) {
+        peerEl.textContent = text;
+      }
+
+      function connect() {
+        socket = new WebSocket(wsUrl);
+
+        socket.addEventListener("open", () => {
+          setStatus("Connected", "ok");
+          socket.send(JSON.stringify({ type: "join", room: roomId }));
+        });
+
+        socket.addEventListener("message", (event) => {
+          let msg;
+          try {
+            msg = JSON.parse(event.data);
+          } catch (err) {
+            return;
+          }
+          if (msg.type === "welcome") {
+            role = msg.role;
+            roomId = msg.roomId;
+            roomEl.textContent = `Room: ${roomId}`;
+            shareInput.value = new URL(window.location.href).toString();
+            setStatus(role === "host" ? "Host" : "Guest", "ok");
+            peerConnected = msg.peers > 0;
+            setPeerStatus(peerConnected ? "Opponent connected" : "Waiting for opponent");
+          }
+          if (msg.type === "peer") {
+            peerConnected = msg.status === "joined";
+            setPeerStatus(peerConnected ? "Opponent connected" : "Waiting for opponent");
+          }
+          if (msg.type === "input" && role === "host") {
+            Object.assign(remoteInput, msg.input || {});
+          }
+          if (msg.type === "state" && role === "guest") {
+            Object.assign(state, msg.state || {});
+          }
+        });
+
+        socket.addEventListener("close", () => {
+          setStatus("Disconnected", "alert");
+          setPeerStatus("Waiting for opponent");
+          peerConnected = false;
+          setTimeout(connect, 1200);
+        });
+      }
+
+      connect();
+
+      const keyMap = {
+        KeyA: "left",
+        KeyD: "right",
+        KeyW: "jump",
+        KeyS: "shoot",
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowUp: "jump",
+        ArrowDown: "shoot",
+      };
+
+      function handleKey(event, isDown) {
+        const action = keyMap[event.code];
+        if (!action) {
+          return;
+        }
+        event.preventDefault();
+        if ((action === "jump" || action === "shoot") && isDown) {
+          input[action] = true;
+        } else if ((action === "jump" || action === "shoot") && !isDown) {
+          input[action] = false;
+        } else {
+          input[action] = isDown;
+        }
+      }
+
+      window.addEventListener("keydown", (event) => handleKey(event, true));
+      window.addEventListener("keyup", (event) => handleKey(event, false));
+
+      document.querySelectorAll(".touch-btn").forEach((button) => {
+        const action = button.dataset.action;
+        if (!action) {
+          return;
+        }
+        const press = (isDown) => {
+          if (action === "jump" || action === "shoot") {
+            input[action] = isDown;
+            return;
+          }
+          input[action] = isDown;
+        };
+        button.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          button.setPointerCapture(event.pointerId);
+          press(true);
+        });
+        button.addEventListener("pointerup", (event) => {
+          event.preventDefault();
+          press(false);
+          button.releasePointerCapture(event.pointerId);
+        });
+        button.addEventListener("pointercancel", () => press(false));
+        button.addEventListener("pointerleave", () => press(false));
+      });
+
+      function sendInput() {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        if (role !== "guest") {
+          return;
+        }
+        socket.send(JSON.stringify({ type: "input", input }));
+        input.jump = false;
+        input.shoot = false;
+      }
+
+      function sendState() {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        if (role !== "host" || !peerConnected) {
+          return;
+        }
+        socket.send(JSON.stringify({ type: "state", state }));
+      }
+
+      setInterval(sendInput, config.sendRate);
+      setInterval(sendState, config.sendRate);
+
+      let lastTime = performance.now();
+
+      function loop(time) {
+        const dt = Math.min(0.033, (time - lastTime) / 1000);
+        lastTime = time;
+
+        if (role === "host") {
+          applyInput(state.p1, input, dt);
+          applyInput(state.p2, remoteInput, dt);
+          stepPlayer(state.p1, dt);
+          stepPlayer(state.p2, dt);
+          stepBall(dt);
+          collide(state.p1);
+          collide(state.p2);
+          if (input.shoot) {
+            attemptLob(state.p1);
+            input.shoot = false;
+          }
+          if (remoteInput.shoot) {
+            attemptLob(state.p2);
+            remoteInput.shoot = false;
+          }
+        }
+
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      resetRound();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>
