@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: soccer
 spec:
-  replicas: 1
+  replicas: 0 # Pi 3 (1 GB RAM) reicht nicht - siehe JOURNEY.MD
   selector:
     matchLabels:
       app: soccer
@@ -17,6 +17,13 @@ spec:
           image: nginx:alpine
           ports:
             - containerPort: 80
+          resources:
+            requests:
+              memory: "16Mi"
+              cpu: "10m"
+            limits:
+              memory: "32Mi"
+              cpu: "100m"
           volumeMounts:
             - name: site-content
               mountPath: /usr/share/nginx/html

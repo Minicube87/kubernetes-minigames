@@ -102,7 +102,7 @@ After almost a year of not logging in, the Pi turned out to be completely broken
 - `journalctl -u k3s | grep -i "fatal\|panic"` → the actual crash message.
 - `sha256sum /usr/local/bin/k3s` compared with the official release checksum → **binary was fine** (first guess "corrupted binary" was wrong).
 - `vcgencmd get_throttled` → `0x0`, so no undervoltage/overheating; `dmesg` → no OOM kills.
-- The root cause of the original crash can't be proven anymore: the journal only went back to the day of the fix (disk full = no old logs). Memory pressure on 1 GB RAM is the most likely trigger.
+- At this point the root cause of the crash was still unclear (the journal only went back to the day of the fix, disk full = no old logs). It was found later the same day, see **Fix 4 / Real root cause** below.
 
 **Fix 1: Disk**
 - Stopped k3s, kept the 2 newest dumps in `/var/lib/rancher/k3s-crash-evidence/`, deleted the other 74 → disk from 100% to **16%**.
@@ -158,7 +158,47 @@ After almost a year of not logging in, the Pi turned out to be completely broken
 - Set `replicas: 0` for `flappy-score-api`, `soccer-rt`, `redis` and `soccer` (soccer is useless without `soccer-rt`). Without the score API, Flappy Bird highscores return 503.
 - Typo lesson: I wrote `request:` instead of `requests:`. `kubectl kustomize` said OK, because it only checks YAML syntax, not the Kubernetes schema. Use `kubectl apply -k . --dry-run=server` to let the API server validate.
 
+**Fix 4 / Real root cause: the USB stick is dying**
+
+While applying the new manifests, things kept crashing:
+1. `kubectl apply -k .` itself crashed with `SIGSEGV: segmentation violation` deep inside the Go runtime (stack unwinder / garbage collector). The trace contained impossible values (e.g. a frame pointer `fp=0x...270f`, which can't be odd on arm64) → data in memory was corrupted. Nothing was applied (Pong still had `resources: {}`).
+2. Second try: 5 Deployments were configured, then `unexpected EOF` on `snake` and `connection refused` for everything after → **k3s died mid-request**.
+
+Ruled out step by step:
+- **Overclocking:** `config.txt` is stock, `vcgencmd measure_clock arm` = 1200 MHz (Pi 3B default). `arm_boost=1` only affects the Pi 4.
+- **Out of memory:** `sudo dmesg | grep -i oom` → no OOM kills.
+
+The decisive hints:
+```bash
+sudo journalctl -u k3s -b | grep -E "Main process exited"
+# k3s.service: Main process exited, code=killed, status=7/BUS   (16:36:49 and 17:59:34)
+
+lsblk -o NAME,SIZE,MODEL,TRAN
+# sda  28.7G SanDisk 3.2Gen1 usb      ← the whole OS runs from a USB stick
+
+sudo dmesg | grep -i "medium error"
+# sd 0:0:0:0: [sda] Sense Key : 0x3 [current]   ASC=0x11 ASCQ=0x0
+# critical medium error, dev sda, sector 35812896 op 0x0:(READ)
+```
+- Tip: `journalctl` without `sudo` showed nothing — my user can't read the system journal.
+- `Sense Key 0x3` + `ASC 0x11` = **Medium Error – Unrecovered Read Error**, reported by the stick itself. Some flash cells are dead.
+- `SIGBUS` (not `SIGSEGV`) = the kernel couldn't deliver data that should exist. Linux loads programs page by page from disk and drops those pages again when RAM is tight. When a page has to be re-read from a broken sector, the process gets `SIGBUS`.
+
+**The full chain (final version):**
+1. The OS + k3s run from a cheap USB stick. k3s writes small changes to its database all the time; 24 GB of core dumps came on top → the flash **wore out**.
+2. Broken sectors → reading program code fails (`SIGBUS`) or returns garbage (`invalid runtime symbol table`, corrupted `kubectl` trace) → k3s crashes.
+3. Every crash wrote a core dump → disk full → `DiskPressure` → all pods evicted/rejected.
+4. 1 GB RAM makes it worse: pages are constantly evicted and re-read from the stick, so the bad sectors get hit much more often, especially under load (rolling updates, startup).
+
+Why could I still log in? Only a tiny part of the stick is broken (1 bad sector out of ~60 million). `bash`/`sshd` live in healthy areas and stay in the RAM page cache. The big, frequently re-read k3s binary and images are what hit the bad spot. But flash wear spreads — the stick has to be replaced.
+
+Current state: the Pi is left as is (no further `apply`). Nothing of value on it — all projects are on GitHub. Next: fresh install on new storage.
+
 **Learned**
+- `SIGBUS` / `critical medium error` / `Sense Key 0x3, ASC 0x11` = **storage hardware failure**, not a software bug. Check `dmesg` early when processes crash randomly.
+- Random crashes in *different* programs at *similar* spots (Go runtime) point to hardware (storage/RAM), not to the programs.
+- Ruling things out is progress: checksum (binary OK) → throttling (OK) → overclock (none) → OOM (none) → disk errors (**found**). My first two guesses (corrupted binary, RAM) were wrong.
+- USB sticks are made for occasional big writes, not for constant small writes (k3s datastore, logs). Use an SSD or a "High Endurance" SD card.
 - A full disk can kill a whole cluster: DiskPressure → evictions → rejected pods → nothing runs.
 - Crashing services + unlimited core dumps = disk bomb. Always cap `LimitCORE`.
 - `vmstat` tells you *why* a machine is slow (CPU vs. RAM vs. disk); load average alone doesn't.
@@ -189,8 +229,12 @@ WIP to make them accessible for everybody.
 - **Pods `Evicted` / rejected with `DiskPressure`** → free disk, delete failed pods via `--field-selector`.
 - **Node thrashing (load 15+, API timeouts)** → scale down, disable metrics-server, add resource limits.
 - **Forgotten pm2 app running as root** → `systemctl disable --now pm2-root`.
+- **Random k3s/kubectl crashes (`SIGBUS`, `invalid runtime symbol table`)** → `dmesg` shows `critical medium error` → USB stick is dying, replace storage.
+- **`git pull` fails with "divergent branches"** → `git pull --no-rebase origin main` (merge) or set `git config --global pull.rebase false`.
 
 ## Things I Would Do Next
+- **Replace the broken USB stick** (SSD or High Endurance SD card; another stick only as a stopgap, tested with H2testw/f3 first) and reinstall: Raspberry Pi OS Lite 64-bit, cgroups, k3s with `disable: [metrics-server]` + `LimitCORE=0`, then `kubectl apply -k .`.
+- Reduce writes on flash storage: `Storage=volatile` for journald, `noatime` in `/etc/fstab`, and check `dmesg | grep -i "medium error"` from time to time.
 - Add a landing page that links to all games.
 - ~~Add a simple scoreboard API with persistent storage.~~ Done (score API + redis), but scaled to 0 on the Pi 3.
 - Add monitoring (basic `kubectl get pods -n minigames`).

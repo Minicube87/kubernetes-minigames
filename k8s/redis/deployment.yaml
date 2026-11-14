@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: redis
 spec:
-  replicas: 1
+  replicas: 0 # Pi 3 (1 GB RAM) reicht nicht - siehe JOURNEY.MD
   selector:
     matchLabels:
       app: redis
@@ -18,6 +18,13 @@ spec:
           args: ["--appendonly", "yes"]
           ports:
             - containerPort: 6379
+          resources:
+            requests:
+              memory: "16Mi"
+              cpu: "10m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
           volumeMounts:
             - name: redis-data
               mountPath: /data
