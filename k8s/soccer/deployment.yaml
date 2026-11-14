@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: soccer
 spec:
-  replicas: 1
+  replicas: 0 # Pi 3 (1 GB RAM) reicht nicht - siehe JOURNEY.MD
   selector:
     matchLabels:
       app: soccer
