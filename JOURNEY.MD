@@ -192,7 +192,7 @@ sudo dmesg | grep -i "medium error"
 
 Why could I still log in? Only a tiny part of the stick is broken (1 bad sector out of ~60 million). `bash`/`sshd` live in healthy areas and stay in the RAM page cache. The big, frequently re-read k3s binary and images are what hit the bad spot. But flash wear spreads — the stick has to be replaced.
 
-Current state: the Pi is left as is (no further `apply`). Nothing of value on it — all projects are on GitHub. Next: fresh install on new storage.
+Current state (Nov 14): the Pi is left as is (no further `apply`). Nothing of value on it — all projects are on GitHub. Next: fresh install on new storage → see chapter 12.
 
 **Learned**
 - `SIGBUS` / `critical medium error` / `Sense Key 0x3, ASC 0x11` = **storage hardware failure**, not a software bug. Check `dmesg` early when processes crash randomly.
@@ -206,6 +206,64 @@ Current state: the Pi is left as is (no further `apply`). Nothing of value on it
 - `requests` = what the scheduler reserves, `limits` = hard ceiling (memory → kill, CPU → throttle).
 - A Pi 3 with 1 GB RAM is the absolute minimum for k3s; k3s recommends 2 GB+ for a server node.
 - Check what else runs on a box (`ps aux`, `systemctl list-units`) — old experiments keep eating resources.
+
+### 12) Fresh Reinstall from Scratch (Nov 15, 2026)
+
+Goal: replace the dead stick and rebuild the Pi cleanly. Planned for 30 minutes, took several hours — almost all of it storage/flashing trouble, not Kubernetes.
+
+**What went wrong while flashing**
+- **Wobbly USB hub:** I wrote and tested sticks through a hub with loose ports. Connection drops in the middle of a write can make the stick disconnect, leave half-written data, or make the controller lock itself.
+- **SanDisk #2 locked itself read-only:** Passed a full H2testw test (28.7 GB, no errors), but after the next write Windows showed `IsReadOnly: True`, and `diskpart` → `attributes disk clear readonly` didn't stick. SanDisk controllers switch to permanent read-only when they detect problems (possibly triggered by the hub). Dead for writing.
+- **Old Raspberry Pi Imager (v1.9.6):** Raspberry Pi OS Trixie uses **cloud-init** for first-boot setup. Imager 1.9.x still writes the old `firstrun.sh` format, so user, Wi-Fi and SSH settings were ignored. Fix: Imager **2.0.12**, which writes `user-data` + `network-config` to `bootfs`.
+- **Verbatim stick:** The Pi never booted from it. The FritzBox showed **no failed Wi-Fi login attempts** at all — so it wasn't the Wi-Fi password, the Pi never got that far. The Pi 3B's USB boot code is picky about sticks.
+- **Accidentally flashed the Desktop image** (`issue.txt` said `stage4`). Lite = `stage2`. For a headless server always pick **Raspberry Pi OS Lite (64-bit)** under "Raspberry Pi OS (other)".
+- **Third SanDisk (same model), written directly at the PC (no hub), Lite 64-bit, Imager 2.0.12 → booted.**
+
+**Diagnosis tricks without a monitor or LAN cable**
+- **Ping TTL tells the OS:** Linux starts at 64, Windows at 128. I pinged `192.168.178.27` and got `ttl=127` → that was my own Windows PC, not the Pi.
+- **Read `bootfs` on the PC:** `user-data` / `network-config` present = Imager settings were written. `issue.txt` shows which image (Lite vs. Desktop).
+- **FritzBox → WLAN → "Erfolglose Anmeldeversuche":** empty list = the Pi never even tried to connect.
+- **SSH host key changed** after reinstall → `ssh-keygen -R <host>` before connecting again.
+- **HDMI to the TV** finally showed the truth: the Pi had booted fine (`raspberrypi login:` + cloud-init messages). The steady green LED blink was *not* an error. Plug HDMI in **before** powering on.
+
+**New setup (all in order)**
+1. Imager 2.0.12: Pi 3 → Raspberry Pi OS **Lite (64-bit)** → hostname `raspberrypi`, user `toor`, Wi-Fi (2.4 GHz, country `DE`), SSH **public key only**.
+2. `~/.ssh/config` in WSL: `Host rpi` → `Hostname raspberrypi.fritz.box`, `User toor` (hostname instead of fixed IP).
+3. `sudo apt update && sudo apt full-upgrade -y` (44 packages, new kernel 6.18.60).
+4. Flash-friendly journald (keep logs persistent — they were essential for the post-mortem — but limit size and writes):
+   ```ini
+   # /etc/systemd/journald.conf.d/flash-friendly.conf
+   [Journal]
+   SystemMaxUse=64M
+   SyncIntervalSec=5m
+   ```
+   `noatime` was already set by Raspberry Pi OS.
+5. Memory cgroup for k3s (append to the **single line** in `/boot/firmware/cmdline.txt`, make a `.bak` first): `cgroup_memory=1 cgroup_enable=memory`. `systemd.unified_cgroup_hierarchy=1` is no longer needed on Debian 13 (cgroup v2 only). Check: `cat /sys/fs/cgroup/cgroup.controllers` → contains `memory`.
+6. **Before** installing k3s: `/etc/rancher/k3s/config.yaml` with `disable: [metrics-server]` and the `LimitCORE=0` drop-in in `/etc/systemd/system/k3s.service.d/`.
+7. `curl -sfL https://get.k3s.io | sh -` → k3s **v1.37.2**.
+8. Waited for Traefik (the repo contains a Traefik `Middleware`; that CRD only exists once Traefik is installed).
+9. `git clone`, then `kubectl apply -k .` → 4 pods (flappy-bird, memory, pong, snake), Pong works in the browser.
+
+**Dry-run gotcha:** On an empty cluster, `kubectl apply -k . --dry-run=server` fails with `namespaces "minigames" not found` for every object — the namespace is only created "pretend". Fix: `kubectl apply -f namespace.yaml` for real first, then dry-run. Same problem with CRDs that don't exist yet.
+
+**sudo surprise:** `sudo -n true` worked from a second SSH session, so I thought `toor` had passwordless sudo. Wrong: `/etc/sudoers.d/010_global-tty` sets `Defaults timestamp_type=global`, so the password cached in my first session counted for all sessions. Real rule: `(ALL : ALL) ALL` with password. Kept it that way (SSH key + sudo password = two hurdles).
+
+**Resources after the reinstall**
+
+| | RAM used | available | swap used |
+|---|---|---|---|
+| Fresh Lite, no k3s | 163 MB | 741 MB | 0 |
+| k3s v1.37 + 4 static games (~10 min after start) | 556 MB | 348 MB | 365 MB |
+
+Right after startup `vmstat` still showed some swapping (`so` up to ~9,000 KB/s), but `b` = 0 and CPU mostly idle → no thrashing. To be re-checked once things have settled; if `so` stays high, scale one more game to 0.
+
+**Learned**
+- Use the **latest Imager**; old Imager + new OS = settings silently ignored.
+- **Never write storage through a flaky hub.** Plug sticks directly into the PC.
+- Debug in layers and gather evidence instead of guessing: TTL, `bootfs` contents, FritzBox log, then HDMI. A monitor would have saved two hours.
+- Create the namespace before a server-side dry run on an empty cluster.
+- Configure things **before** installing (k3s `config.yaml`, `LimitCORE`) instead of fixing them afterwards.
+- This whole manual procedure is the reason for a follow-up project: describe the Pi as code (cloud-init + Ansible) so a dead stick means a 10-minute rebuild.
 
 ## Current URLs (LAN)
 - `http://raspberrypi.fritz.box/flappy` (without highscores, score API is scaled to 0)
@@ -231,10 +289,14 @@ WIP to make them accessible for everybody.
 - **Forgotten pm2 app running as root** → `systemctl disable --now pm2-root`.
 - **Random k3s/kubectl crashes (`SIGBUS`, `invalid runtime symbol table`)** → `dmesg` shows `critical medium error` → USB stick is dying, replace storage.
 - **`git pull` fails with "divergent branches"** → `git pull --no-rebase origin main` (merge) or set `git config --global pull.rebase false`.
+- **Imager settings (user, Wi-Fi, SSH) ignored on Trixie** → update Raspberry Pi Imager to 2.x (cloud-init).
+- **Stick shows `IsReadOnly: True`, can't be cleared** → controller locked itself, stick is dead for writing.
+- **Pi not found in the network** → check ping TTL (is it really the Pi?), `bootfs` contents, FritzBox failed-login list, then HDMI.
+- **`--dry-run=server` says namespace not found** → create the namespace for real first.
 
 ## Things I Would Do Next
-- **Replace the broken USB stick** (SSD or High Endurance SD card; another stick only as a stopgap, tested with H2testw/f3 first) and reinstall: Raspberry Pi OS Lite 64-bit, cgroups, k3s with `disable: [metrics-server]` + `LimitCORE=0`, then `kubectl apply -k .`.
-- Reduce writes on flash storage: `Storage=volatile` for journald, `noatime` in `/etc/fstab`, and check `dmesg | grep -i "medium error"` from time to time.
+- ~~Replace the broken USB stick and reinstall.~~ Done (Nov 15, 2026), see chapter 12. Long-term: a "High Endurance" microSD or a small SSD instead of USB sticks.
+- Check `dmesg | grep -i "medium error"` from time to time (new stick is the same SanDisk model as the dead one).
 - Add a landing page that links to all games.
 - ~~Add a simple scoreboard API with persistent storage.~~ Done (score API + redis), but scaled to 0 on the Pi 3.
 - Add monitoring (basic `kubectl get pods -n minigames`).
