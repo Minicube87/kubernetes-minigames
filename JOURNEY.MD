@@ -268,11 +268,11 @@ Right after startup `vmstat` still showed some swapping (`so` up to ~9,000 KB/s)
 ## Current URLs (LAN)
 - `http://raspberrypi.fritz.box/flappy` (without highscores, score API is scaled to 0)
 - `http://raspberrypi.fritz.box/pong`
-- `http://raspberrypi.fritz.box/memory`
 - `http://raspberrypi.fritz.box/snake`
 - `/soccer` is disabled (`replicas: 0`) on the Pi 3.
 
-Only accessing inside my personal WIFI Network from home. 
+Only accessing inside my personal WIFI Network from home.
+Memory game removed (Nov 15, 2026): it used meme images of real people that don't fit a portfolio project, and its hardcoded `hostPath` (`/home/kale/...`) broke after the reinstall.
 
 WIP to make them accessible for everybody.
 
