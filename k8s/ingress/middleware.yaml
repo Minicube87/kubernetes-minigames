@@ -6,7 +6,6 @@ spec:
   stripPrefixRegex:
     regex:
       - "^/flappy"
-      - "^/memory"
       - "^/pong"
       - "^/snake"
       - "^/soccer"
